@@ -47,4 +47,20 @@ router.delete("/:id", authMiddleware, async (req, res) => {
   }
 });
 
+router.put("/:id", authMiddleware, async (req, res) => {
+  try {
+    const { itemName, category, amount } = req.body;
+    
+    const expense = await Expense.findByIdAndUpdate(
+      req.params.id,
+      { itemName, category, amount },
+      { new: true }
+    );
+
+    res.json(expense);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
 module.exports = router;
