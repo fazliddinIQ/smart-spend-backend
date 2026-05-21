@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const User = require("../models/User");
+const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -74,6 +75,39 @@ router.post("/login", async (req, res) => {
       user,
     });
   } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+router.put("/profile", authMiddleware, async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (username) user.username = username;
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      user.password = hashedPassword;
+    }
+
+    await user.save();
+
+    res.json({
+      message: "Profile updated successfully",
+      user: {
+        _id: user._id,
+        username: user.username
+      }
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ message: "Username already exists" });
+    }
     res.status(500).json(error);
   }
 });
